@@ -8,16 +8,16 @@ import itertools
 from joblib import Parallel, delayed
 from pathlib import Path
 
-dataName = 'low_freq_high_flow.csv'
+dataName = 'high_freq_high_flow_nomut.csv'
 num = 5 # number of replicates per simulation
 
 KErat = np.logspace(-1,1,9)
-wvals = np.array([0.1, 0.001])
+wvals = np.array([0.1])
 reps = np.linspace(1,num, num)
 
 Parameters = {'KH': 50000,  # Carrying capacity in H
               'mu': 0.1,  # microbe mutation rate
-              'sim_time': 2000,  # total simulation time
+              'sim_time': 500,  # total simulation time
               'mH' : 0.5,
               'v' : 0.01,
               'd' : 0.01, # probability of death

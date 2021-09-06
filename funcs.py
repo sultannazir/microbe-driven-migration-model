@@ -89,7 +89,8 @@ def selection_new(H0, H1, E):
     if NH0 != 0:
         prob0 = np.random.random(size=(2,NH0))
         idx0b = [i for i in range(NH0) if prob0[0][i] < H0[2][i]]
-        mutations = np.random.normal(0, mu, size=(3, len(idx0b))).round(2)
+        #mutations = np.random.normal(0, mu, size=(3, len(idx0b))).round(2)
+        mutations = np.array([[0]*len(idx0b),[0]*len(idx0b),[random.normalvariate(0,mu) for i in range(len(idx0b))]]).round(2)
         offs = np.clip(H0[:, idx0b] + mutations, 0, 1)
         idx0d = [i for i in range(NH0) if prob0[1][i] < d]
         H0 = np.delete(H0, idx0d, axis=1)
@@ -98,7 +99,9 @@ def selection_new(H0, H1, E):
     if NH1 != 0:
         prob1 = np.random.random(size=(2,NH1))
         idx1b = [i for i in range(NH1) if prob1[0][i] < (1-w)*H1[2][i]]
-        mutations = np.random.normal(0, mu, size=(3, len(idx1b))).round(2)
+        #mutations = np.random.normal(0, mu, size=(3, len(idx1b))).round(2)
+        mutations = np.array(
+            [[0] * len(idx1b), [0] * len(idx1b), [random.normalvariate(0, mu) for i in range(len(idx1b))]]).round(2)
         offs = np.clip(H1[:, idx1b] + mutations, 0, 1)
         idx1d = [i for i in range(NH1) if prob1[1][i] < d]
         H1 = np.delete(H1, idx1d, axis=1)
@@ -108,7 +111,9 @@ def selection_new(H0, H1, E):
     if NE != 0:
         prob = np.random.random(size=(2,NE))
         idxb = [i for i in range(NE) if prob[0][i] < 1 - E[2][i]]
-        mutations = np.random.normal(0, mu, size=(3, len(idxb))).round(2)
+        #mutations = np.random.normal(0, mu, size=(3, len(idxb))).round(2)
+        mutations = np.array(
+            [[0] * len(idxb), [0] * len(idxb), [random.normalvariate(0, mu) for i in range(len(idxb))]]).round(2)
         offs = np.clip(E[:, idxb] + mutations, 0, 1)
         idxd = [i for i in range(NE) if prob[1][i] < d]
         E = np.delete(E, idxd, axis=1)
