@@ -24,7 +24,8 @@ def initialize():
     # bound state in host
     H1 = np.array([[], [], []])
     # external environment state
-    E = np.array([[0] * KE, [1] * KE, np.random.random(KE).tolist()])
+    #E = np.array([[0] * KE, [1] * KE, np.random.random(KE).tolist()])
+    E = np.array([[0] * KE, [1] * KE, [0]*KE])
 
     return (H0, H1, E)
 
@@ -85,12 +86,13 @@ def adhesion(H0, H1):
 def selection_new(H0, H1, E):
     NH0 = len(H0[0])
     NH1 = len(H1[0])
+    NH = NH0+NH1
 
     if NH0 != 0:
         prob0 = np.random.random(size=(2,NH0))
         idx0b = [i for i in range(NH0) if prob0[0][i] < H0[2][i]]
-        #mutations = np.random.normal(0, mu, size=(3, len(idx0b))).round(2)
-        mutations = np.array([[0]*len(idx0b),[0]*len(idx0b),[random.normalvariate(0,mu) for i in range(len(idx0b))]]).round(2)
+        mutations = np.random.normal(0, mu, size=(3, len(idx0b))).round(2)
+        #mutations = np.array([[0]*len(idx0b),[0]*len(idx0b),[random.normalvariate(0,mu) for i in range(len(idx0b))]]).round(2)
         offs = np.clip(H0[:, idx0b] + mutations, 0, 1)
         idx0d = [i for i in range(NH0) if prob0[1][i] < d]
         H0 = np.delete(H0, idx0d, axis=1)
@@ -99,9 +101,9 @@ def selection_new(H0, H1, E):
     if NH1 != 0:
         prob1 = np.random.random(size=(2,NH1))
         idx1b = [i for i in range(NH1) if prob1[0][i] < (1-w)*H1[2][i]]
-        #mutations = np.random.normal(0, mu, size=(3, len(idx1b))).round(2)
-        mutations = np.array(
-            [[0] * len(idx1b), [0] * len(idx1b), [random.normalvariate(0, mu) for i in range(len(idx1b))]]).round(2)
+        mutations = np.random.normal(0, mu, size=(3, len(idx1b))).round(2)
+        #mutations = np.array(
+        #    [[0] * len(idx1b), [0] * len(idx1b), [random.normalvariate(0, mu) for i in range(len(idx1b))]]).round(2)
         offs = np.clip(H1[:, idx1b] + mutations, 0, 1)
         idx1d = [i for i in range(NH1) if prob1[1][i] < d]
         H1 = np.delete(H1, idx1d, axis=1)
@@ -111,9 +113,9 @@ def selection_new(H0, H1, E):
     if NE != 0:
         prob = np.random.random(size=(2,NE))
         idxb = [i for i in range(NE) if prob[0][i] < 1 - E[2][i]]
-        #mutations = np.random.normal(0, mu, size=(3, len(idxb))).round(2)
-        mutations = np.array(
-            [[0] * len(idxb), [0] * len(idxb), [random.normalvariate(0, mu) for i in range(len(idxb))]]).round(2)
+        mutations = np.random.normal(0, mu, size=(3, len(idxb))).round(2)
+        #mutations = np.array(
+        #    [[0] * len(idxb), [0] * len(idxb), [random.normalvariate(0, mu) for i in range(len(idxb))]]).round(2)
         offs = np.clip(E[:, idxb] + mutations, 0, 1)
         idxd = [i for i in range(NE) if prob[1][i] < d]
         E = np.delete(E, idxd, axis=1)
@@ -243,12 +245,14 @@ def run_one_sim_get_final_state(Parameters):
         H0, H1, E = selection_new(H0, H1, E)
         H0, H1, E = cap(H0, H1, E)
 
-    data = [Parameters['KE'], Parameters['w'], Parameters['mH'], Parameters['v'], len(H1[0]), len(H0[0]),
-            len(E[0]), np.mean(np.r_[H0[0], H1[0], E[0]]), np.std(np.r_[H0[0], H1[0], E[0]]),
-            np.mean(np.r_[H0[1], H1[1], E[1]]), np.std(np.r_[H0[1], H1[1], E[1]]),
-            np.mean(np.r_[H0[2], H1[2], E[2]]), np.std(np.r_[H0[2], H1[2], E[2]])]
+    totH = len(H0[0])+len(H1[0])
+    if totH ==0:
+        frac = np.nan
+    else:
+        frac = len(H1[0])/totH
+    data = [Parameters['KE'], Parameters['w'], Parameters['mH'], Parameters['v'], frac]
 
-    print('KE = {}, w = {} done'.format(Parameters['KE'], Parameters['w'] ))
+    print('KE = {}, mH = {}, v = {} done'.format(Parameters['KE'], Parameters['mH'], Parameters['v'] ))
     return (data)
 
 

@@ -8,34 +8,33 @@ import itertools
 from joblib import Parallel, delayed
 from pathlib import Path
 
-dataName = 'high_freq_high_flow_nomut.csv'
-num = 5 # number of replicates per simulation
+dataName = 'flow_data.csv'
+#num = 5 # number of replicates per simulation
 
-KErat = np.logspace(-1,1,9)
-wvals = np.array([0.1])
-reps = np.linspace(1,num, num)
+KErat = [0.1,0.5,2,10]
+vvals = np.linspace(0.1,1,10)
+mvals = np.linspace(0.1,1,10)
 
 Parameters = {'KH': 50000,  # Carrying capacity in H
               'mu': 0.1,  # microbe mutation rate
-              'sim_time': 500,  # total simulation time
-              'mH' : 0.5,
-              'v' : 0.01,
+              'sim_time': 5,  # total simulation time
+              'w' : 0.1, # cost of host-bound state
               'd' : 0.01, # probability of death
               }
 
 
-def set_parameters(rat, w, r):
+def set_parameters(rat, v, mH):
     Parameters_local = Parameters.copy()
     Parameters_local['KE'] = int(Parameters['KH'] * rat)
-    Parameters_local['w'] = w
-    Parameters_local['rep'] = r
+    Parameters_local['v'] = v
+    Parameters_local['mH'] = mH
 
     return Parameters_local
 
 def run_model():
     # set modelpar list to run
     modelParList = [set_parameters(*x)
-                    for x in itertools.product(*(KErat, wvals, reps))]
+                    for x in itertools.product(*(KErat, vvals, mvals))]
     # run model
     nJobs = min(len(modelParList), -1)
     print('starting with %i jobs' % len(modelParList))
@@ -43,7 +42,6 @@ def run_model():
         delayed(fn.run_one_sim_get_final_state)(par) for par in modelParList)
 
     # store output
-    print(results)
 
     saveName = dataName
     with open(saveName, "w", newline="") as f:
