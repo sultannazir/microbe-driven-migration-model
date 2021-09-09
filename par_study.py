@@ -13,13 +13,14 @@ dataName = 'flow_data.csv'
 
 KErat = [0.1,0.5,2,10]
 vvals = np.linspace(0.1,1,10)
-mvals = np.linspace(0.1,1,10)
+mvals = np.linspace(0.05,0.5,10)
 
 Parameters = {'KH': 50000,  # Carrying capacity in H
               'mu': 0.1,  # microbe mutation rate
-              'sim_time': 5,  # total simulation time
+              'sim_time': 500,  # total simulation time
               'w' : 0.1, # cost of host-bound state
               'd' : 0.01, # probability of death
+              'rep': 5 # number of replicates to average over
               }
 
 

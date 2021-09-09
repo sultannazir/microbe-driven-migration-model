@@ -235,21 +235,25 @@ def run_one_sim_get_M(Parameters):
 def run_one_sim_get_final_state(Parameters):
     # read parameters
     parameters_to_global_variables(Parameters)
+    frac = 0
 
-    H0, H1, E = initialize()
-    for t in range(sim_time):
-        vrand = random.random()
-        if vrand < v:
-            H0, E = flow(H0, E)
-        H0, H1 = adhesion(H0, H1)
-        H0, H1, E = selection_new(H0, H1, E)
-        H0, H1, E = cap(H0, H1, E)
+    for rep in range(Parameters['rep']):
+        H0, H1, E = initialize()
+        for t in range(sim_time):
+            vrand = random.random()
+            if vrand < v:
+                H0, E = flow(H0, E)
+            H0, H1 = adhesion(H0, H1)
+            H0, H1, E = selection_new(H0, H1, E)
+            H0, H1, E = cap(H0, H1, E)
 
-    totH = len(H0[0])+len(H1[0])
-    if totH ==0:
-        frac = np.nan
-    else:
-        frac = len(H1[0])/totH
+        totH = len(H0[0])+len(H1[0])
+        if totH ==0:
+            frac += np.nan
+        else:
+            frac += len(H1[0])/totH
+
+    frac = frac/Parameters['rep']
     data = [Parameters['KE'], Parameters['w'], Parameters['mH'], Parameters['v'], frac]
 
     print('KE = {}, mH = {}, v = {} done'.format(Parameters['KE'], Parameters['mH'], Parameters['v'] ))
