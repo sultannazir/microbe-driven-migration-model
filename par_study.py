@@ -2,14 +2,11 @@
 
 import funcs as fn
 import numpy as np
-import pandas as pd
 import csv
 import itertools
 from joblib import Parallel, delayed
-from pathlib import Path
 
 dataName = 'flow_data.csv'
-#num = 5 # number of replicates per simulation
 
 KErat = [0.1,0.5,2,10]
 vvals = np.linspace(0.1,1,10)
@@ -19,8 +16,7 @@ Parameters = {'KH': 50000,  # Carrying capacity in H
               'mu': 0.1,  # microbe mutation rate
               'sim_time': 500,  # total simulation time
               'w' : 0.1, # cost of host-bound state
-              'd' : 0.01, # probability of death
-              'rep': 5 # number of replicates to average over
+              'd' : 0.01 # probability of death
               }
 
 
@@ -33,7 +29,7 @@ def set_parameters(rat, v, mH):
     return Parameters_local
 
 def run_model():
-    # set modelpar list to run
+    # set model par list to run
     modelParList = [set_parameters(*x)
                     for x in itertools.product(*(KErat, vvals, mvals))]
     # run model
@@ -50,21 +46,3 @@ def run_model():
         writer.writerows(results)
 
 run_model()
-
-#data = []
-#for k in range(len(KErat)):
-#    for l in range(len(wvals)):
-#        KE = int(Parameters['KH'] * KErat[k])
-#        w = wvals[l]
-#        Parameters['KE'] = KE
-#        Parameters['w'] = w
-
-#        run = fn.run_one_sim_get_final_state(Parameters)
-#
-#        dat = [KE, w, Parameters['mH'], Parameters['v']] + run
-#        data.append(dat)
-
-#        print('KE = {}, w = {} done'.format(KE, w))
-
-#data = pd.DataFrame(data, columns=['KE', 'w', 'NH1', 'NH0', 'NE', 'M01mean', 'M01std', 'M10mean', 'M10std'])
-
