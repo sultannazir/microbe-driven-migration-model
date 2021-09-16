@@ -16,6 +16,7 @@ Parameters = {'KH': 50000,  # Carrying capacity in H
               'd' : 0.01 # probability of intrinsic death
               }
 
+name = 'sample.mp4' # path and name of saved animation file
 bins = 20
 tpf = 400 # milliseconds per time-step/frame
 # colour maps for each state
@@ -82,9 +83,10 @@ for t in range(Parameters['sim_time']):
     print(t)
 
     camera.snap()
-animation = camera.animate(interval=400)
+
+animation = camera.animate(interval=tpf)
 HTML(animation.to_html5_video())
 
 plt.show()
 
-animation.save('sample.mp4')
+animation.save(name)
