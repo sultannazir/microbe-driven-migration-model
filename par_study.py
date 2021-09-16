@@ -16,7 +16,8 @@ Parameters = {'KH': 50000,  # Carrying capacity in H
               'mu': 0.1,  # microbe mutation rate
               'sim_time': 500,  # total simulation time
               'w' : 0.1, # cost of host-bound state
-              'd' : 0.01 # probability of death
+              'd' : 0.01, # probability of death
+              'rep' : 1
               }
 
 
