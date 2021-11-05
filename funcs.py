@@ -24,7 +24,8 @@ def initialize():
     ## i.e. H0[0][i] is the M01 value of the i-th agent in state H0
 
     ## free-floating state in host = empty
-    H0 = np.array([[], [], []])
+    H0 = np.array([[0] * KH, [1] * KH, [0.1]*KH])
+    #H0 = np.random.random((3,KH))
 
     ## bound state in host = empty
     H1 = np.array([[], [], []])
@@ -32,6 +33,7 @@ def initialize():
     ## external environment state
     ## initially all agents are in E, fully adapted to E and bear no mechanisms of attaching to host
     E = np.array([[0] * KE, [1] * KE, [0]*KE])
+    #E = np.random.random((3,KE))
 
     return (H0, H1, E)
 
@@ -70,6 +72,39 @@ def flow(H0, E):
 
     return (H0, E)
 
+def flow_new(H0, E):
+
+    ## initialize a new transition array to temporarily harbour migrating agents
+    ## migrants from H0 to E, and their indices:
+    migHE = np.array([[], [], []])
+    idxHE = []
+    ## migrants from E to H0 and their indices:
+    migEH = np.array([[], [], []])
+    idxEH = []
+
+    NH = len(H0[0])
+    NE = len(E[0])
+
+    if NH != 0:
+        ## number of emigrants from host
+        mHE = int(np.floor(mH * NH))
+        ## indices of emigrants
+        idxHE = random.sample(range(NH), min(mHE, NH))
+        migHE = np.c_[migHE, H0[:, idxHE]]
+    if NE != 0:
+        ## number of immigrants to host
+        mEH = int(np.floor(mH * KH * NE / Emat))
+        ## indices of emigrants
+        idxEH = random.sample(range(NE), min(mEH, NE))
+        migEH = np.c_[migEH, E[:, idxEH]]
+
+    ## move migrants from transit to respective states and delete them from initial states
+    H0 = np.delete(H0, idxHE, axis=1)
+    H0 = np.c_[H0, migEH]
+    E = np.delete(E, idxEH, axis=1)
+    E = np.c_[E, migHE]
+
+    return (H0, E)
 
 def adhesion(H0, H1):
 
@@ -111,7 +146,7 @@ def selection_new(H0, H1, E):
         ## agents chosen to reproduce with probability rH
         idx0b = [i for i in range(NH0) if prob0[0][i] < H0[2][i]]
         ## add mutations to offsprings within physiological limits
-        mutations = np.random.normal(0, mu, size=(3, len(idx0b))).round(2)
+        mutations = np.random.normal(0, mu, size=(3, len(idx0b))).round(3)
         offs = np.clip(H0[:, idx0b] + mutations, 0, 1)
 
         ## oops some randomly died w.p. d
@@ -125,7 +160,7 @@ def selection_new(H0, H1, E):
         ## agents chosen to reproduce with probability (1-w)*rH
         idx1b = [i for i in range(NH1) if prob1[0][i] < (1-w)*H1[2][i]]
         ## add mutations to offsprings within physiological limits
-        mutations = np.random.normal(0, mu, size=(3, len(idx1b))).round(2)
+        mutations = np.random.normal(0, mu, size=(3, len(idx1b))).round(3)
         offs = np.clip(H1[:, idx1b] + mutations, 0, 1)
 
         ## oops some randomly died w.p. d
@@ -140,7 +175,7 @@ def selection_new(H0, H1, E):
         ## agents chosen to reproduce with probability 1-rH
         idxb = [i for i in range(NE) if prob[0][i] < 1 - E[2][i]]
         ## add mutations to offsprings within physiological limits
-        mutations = np.random.normal(0, mu, size=(3, len(idxb))).round(2)
+        mutations = np.random.normal(0, mu, size=(3, len(idxb))).round(3)
         offs = np.clip(E[:, idxb] + mutations, 0, 1)
 
         ## oops some randomly died w.p. d
@@ -231,32 +266,77 @@ def env_dynamics(E):
 
 ## functions to simulate everything - defined for different purposes
 
+def run_sone_sim_get_hist(Parameters):
+    # read parameters
+    parameters_to_global_variables(Parameters)
+
+    H0, H1, E = initialize()
+    for t in range(sim_time):
+        vrand = random.random()
+        if vrand < v:
+            H0, E = flow_new(H0, E)
+        H0, H1 = adhesion(H0, H1)
+        H0, H1, E = selection_new(H0, H1, E)
+        H0, H1, E = cap(H0, H1, E)
+
+    histH1, edH1 = np.histogramdd(H1.T, bins=(20,20,20), range=[(0,1),(0,1),(0,1)])
+    histH0, edH0 = np.histogramdd(H0.T, bins=(20, 20, 20), range=[(0, 1), (0, 1), (0, 1)])
+    histE, edE = np.histogramdd(E.T, bins=(20, 20, 20), range=[(0, 1), (0, 1), (0, 1)])
+
+    data = []
+
+    for i,M01 in enumerate(histH1):
+        for j,M10 in enumerate(M01):
+            for k,rH in enumerate(M10):
+
+                # columns = KE, w, mH, v, mu, state, M01, M10, rH, value
+
+                datH1 = [Parameters['KE'], Parameters['w'], Parameters['mH'], Parameters['v'], Parameters['mu'],
+                         'H1', edH1[i]+0.05, edH1[j]+0.05, edH1[k]+0.05,  histH1[i][j][k]]
+                datH0 = [Parameters['KE'], Parameters['w'], Parameters['mH'], Parameters['v'], Parameters['mu'],
+                         'H0', edH1[i]+0.05, edH1[j]+0.05, edH1[k]+0.05,histH0[i][j][k]]
+                datE = [Parameters['KE'], Parameters['w'], Parameters['mH'], Parameters['v'], Parameters['mu'],
+                         'E', edH1[i]+0.05, edH1[j]+0.05, edH1[k]+0.05, histE[i][j][k]]
+
+                data.append(datH1)
+                data.append(datH0)
+                data.append(datE)
+
+    return(data)
+
 def run_one_sim_get_final_state(Parameters):
     # read parameters
     parameters_to_global_variables(Parameters)
     frac = 0
 
-    for rep in range(Parameters['rep']):
-        H0, H1, E = initialize()
-        for t in range(sim_time):
-            vrand = random.random()
-            if vrand < v:
-                H0, E = flow(H0, E)
-            H0, H1 = adhesion(H0, H1)
-            H0, H1, E = selection_new(H0, H1, E)
-            H0, H1, E = cap(H0, H1, E)
+    H0, H1, E = initialize()
+    for t in range(sim_time):
+        vrand = random.random()
+        if vrand < v:
+            H0, E = flow_new(H0, E)
+        H0, H1 = adhesion(H0, H1)
+        H0, H1, E = selection_new(H0, H1, E)
+        H0, H1, E = cap(H0, H1, E)
 
-        totH = len(H0[0])+len(H1[0])
-        if totH ==0:
-            frac += np.nan
-        else:
-            frac += len(H1[0])/totH
+    A1 = np.mean(H1[0])
+    A0 = np.mean(H0[0])
+    A = np.mean(E[0])
+    D1 = np.mean(H1[1])
+    D0 = np.mean(H0[1])
+    D = np.mean(E[1])
+    rH1 = np.mean(H1[2])
+    rH0 = np.mean(H0[2])
+    rH = np.mean(E[2])
+    numH1 = len(H1[0])
+    numH0 = len(H0[0])
+    numE = len(E[0])
 
-    frac = frac/Parameters['rep']
-    data = [Parameters['KE'], Parameters['w'], Parameters['mH'], Parameters['v'], frac]
+    # frac = frac/Parameters['rep']
+    data = [Parameters['KE'], Parameters['w'], Parameters['mH'], Parameters['v'], A1, A0, A, D1, D0, D, rH1, rH0, rH,
+            numH1, numH0, numE]
+    print('KE = {}, mH = {}, v = {} done'.format(Parameters['KE'], Parameters['mH'], Parameters['v']))
 
-    print('KE = {}, mH = {}, v = {} done'.format(Parameters['KE'], Parameters['mH'], Parameters['v'] ))
-    return (data)
+    return(data)
 
 def run_one_sim_get_M(Parameters):
     # read parameters
@@ -317,7 +397,6 @@ def get_full_data_final(Parameters):
         H0, H1, E = selection_new(H0, H1, E)
         H0, H1, E = cap(H0, H1, E)
 
-        print(t)
 
 
     H1dat = pd.DataFrame(np.vstack([H1, np.array(['H1']*len(H1[0])), np.array([Parameters['KE']]*len(H1[0]))]).T,
